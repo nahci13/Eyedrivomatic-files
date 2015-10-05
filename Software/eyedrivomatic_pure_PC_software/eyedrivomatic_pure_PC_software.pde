@@ -17,13 +17,7 @@
     For more information on this licence see http://www.gnu.org/licenses/
  
  Many thanks to Carlos William Galdino whose instructable set me on the right path. 
- http://www.instructables.com/id/Arduino-USB-comunication-Example-Program/  
- 
- 
- Before you export this program, or run it, check your arduino's com port number in the arduino ide. 
- Then alter the com number in this program, on line number 62. It is currently set at com16.
-
- */
+ http://www.instructables.com/id/Arduino-USB-comunication-Example-Program/  */
 
 int driveSwitchState = 0;
 int lastBut = 0;
@@ -58,8 +52,8 @@ void setup (){
   if (frame != null) {
     frame.setResizable(true);
   }
-  frame.setTitle("Eyedrivomatic Pure 4D");
-  Port = new Serial(this, "COM16", 9600); //starts the Serial port - COM4
+  frame.setTitle("Eyedrivomatic for PC 1A");
+  Port = new Serial(this, "COM26", 9600); //starts the Serial port - COM4
   Port.bufferUntil('\n'); //clean the buffer    
 }
 

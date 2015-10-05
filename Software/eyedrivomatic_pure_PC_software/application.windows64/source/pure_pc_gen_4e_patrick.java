@@ -1,3 +1,21 @@
+import processing.core.*; 
+import processing.data.*; 
+import processing.event.*; 
+import processing.opengl.*; 
+
+import processing.serial.*; 
+
+import java.util.HashMap; 
+import java.util.ArrayList; 
+import java.io.File; 
+import java.io.BufferedReader; 
+import java.io.PrintWriter; 
+import java.io.InputStream; 
+import java.io.OutputStream; 
+import java.io.IOException; 
+
+public class pure_pc_gen_4e_patrick extends PApplet {
+
  /*
     Eyedrivomatic for pc - Version 4
     This program is intended for use as part of the 'Eyedrivomatic System' for 
@@ -7,7 +25,7 @@
     The users own AAC software package can be configured to provide the necessary 
     text input with an interface in that package suited to the users needs. 
     
-    For more information on the Eyedrivomatic project see, 
+    For more information on the Eyedrivomatic project see, https://hackaday.io/project/5426-eye-controlled-wheelchair
     
     
     Copyright (C)2015 Patrick Joyce
@@ -43,21 +61,21 @@ int data15;    //data16 received from Arduino nudgeDuration
 
 boolean firstContact = false;
 
-import processing.serial.*;//start serial communication
+//start serial communication
 Serial Port;
 
-void setup (){ 
+public void setup (){ 
   
-  size (1260,790);    //Initialise the window's size
+      //Initialise the window's size
   if (frame != null) {
     frame.setResizable(true);
   }
-  frame.setTitle("Eyedrivomatic Pure 4D");
+  frame.setTitle("Eyedrivomatic Pure 4E");
   Port = new Serial(this, "COM16", 9600); //starts the Serial port - COM4
   Port.bufferUntil('\n'); //clean the buffer    
 }
 
-void draw (){ //starts loop
+public void draw (){ //starts loop
 
   background(243, 242, 162); // Background colour 
   
@@ -218,7 +236,7 @@ else {
 }
 }
 
-void keyPressed(){ 
+public void keyPressed(){ 
   
   switch (key) {
       case 'a':
@@ -363,20 +381,20 @@ void keyPressed(){
       case '@':
       Port.write(76); //overCorrect down one degree 
       break;
-      case '£':
+      case '\u00a3':
       Port.write(78); //diagonal reducer toggle 
       break;
   }
 }
 
-void serialEvent (Serial Port) {    //receive the USB data from Arduino 
+public void serialEvent (Serial Port) {    //receive the USB data from Arduino 
 
 
     String receivedArduino = Port.readStringUntil('\n'); // read the buffer
     
     receivedArduino = trim(receivedArduino); //erase ALL the possible spaces between the letters 
  
-    int data[] = int(split(receivedArduino, ',')); //this function splits the string and put a comma between the data
+    int data[] = PApplet.parseInt(split(receivedArduino, ',')); //this function splits the string and put a comma between the data
     //it also convert the string in "int"
     
     data0 = data[0];    //data 0 received from Arduino
@@ -403,4 +421,14 @@ void serialEvent (Serial Port) {    //receive the USB data from Arduino
     Port.write("!"); // send a byte (! - 33) to ask for more data 
     
     
+}
+  public void settings() {  size (1260,790); }
+  static public void main(String[] passedArgs) {
+    String[] appletArgs = new String[] { "pure_pc_gen_4e_patrick" };
+    if (passedArgs != null) {
+      PApplet.main(concat(appletArgs, passedArgs));
+    } else {
+      PApplet.main(appletArgs);
+    }
+  }
 }

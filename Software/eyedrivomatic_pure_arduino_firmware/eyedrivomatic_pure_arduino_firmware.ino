@@ -1,4 +1,4 @@
- /*
+  /*
     Eyedrivomatic for Arduino - Version 4
     This program is intended for use as part of the 'Eyedrivomatic System' for 
     controlling an electric wheelchair using soley the user's eyes. 
@@ -32,13 +32,13 @@ int speedState;//the variable for the global speed setting
 int speedX = 0;//the amount the servos actually move is derived by adding a number defined by 
 int speedY = 0;// the global speed setting called speedX or speedY to the mid position of the
 int speedAdd = 9;// servo in question, then adding a constant called speedAdd. 
-// This allows us to better control the speed of the two servos in relation to each other, 
-// and the direction of travel. 
+int speedAddDiag = 5;//This allows us to better control the speed of the two servos
+//  in relation to each other, and the direction of travel. 
 
-int output1 = 9; //these initialise the output pins on the arduino that control the output relays 
-int output2 = 10;
-int output3 = 11; 
-int output4 = 12; 
+int output1 = 7; //these initialise the output pins on the arduino that control the output relays 
+int output2 = 6;
+int output3 = 5; 
+int output4 = 4; 
 
 int lastDirButtPress = 0; // a variable for the most recent direction button to be pressed 
 //  0=nothing 1=nw 2=n 3=ne 4=e 5=se 6=s 7=sw 8=w
@@ -62,6 +62,14 @@ int durationTimeNSstate = 30;
 int durationTimeEWstate = 30; 
 
 int diagonalReducer = 1; 
+int diagonalReducerX = 0; 
+int diagonalReducerY = 0; 
+int normalDiagonalReducerX = 0; 
+int normalDiagonalReducerY = 0; 
+int flipDiagonalReducerX = 0; 
+int flipDiagonalReducerY = 0; 
+
+int leftRightReducer = 22; 
 
 int nudgeDuration = 6; 
 int nudgeSpeed = 4; 
@@ -84,10 +92,10 @@ void setup() {
   pinMode(output3, OUTPUT);
   pinMode(output4, OUTPUT);
   
-  digitalWrite(output1, HIGH);// set all the relays to open (off)
-  digitalWrite(output2, HIGH);
-  digitalWrite(output3, HIGH);
-  digitalWrite(output4, HIGH);
+  digitalWrite(output1, LOW);// set all the relays to open (off)
+  digitalWrite(output2, LOW);
+  digitalWrite(output3, LOW);
+  digitalWrite(output4, LOW);
  
 
     if (eyedrive != EYEDRIVE) {
@@ -111,9 +119,13 @@ void setup() {
         nudgeSpeed = EEPROM.read(15); 
         nudgeDuration = EEPROM.read(16); 
 }
-
-  xservo.attach(6);  // attaches the servo on pin 7 to the servo object 
-  yservo.attach(7);  // attaches the servo on pin 7 to the servo object 
+if ((nudgeSpeed == 0) || (nudgeSpeed == 4) || (nudgeSpeed == 8) || (nudgeSpeed == 12)){
+  }
+else{
+  nudgeSpeed = 0; 
+}
+  xservo.attach(8);  // attaches the servo on pin 7 to the servo object 
+  yservo.attach(9);  // attaches the servo on pin 7 to the servo object 
   xservo.write(xMIDpos);//sends the x servo to it's mid position 
   yservo.write(yMIDpos);// sends the y servo to it's mid position 
   
@@ -129,16 +141,37 @@ else {
 }
 if(speedState == 1){
  speedX = 0; 
+ speedY = 8; 
+ normalDiagonalReducerX = 3; 
+ normalDiagonalReducerY = 13;
 }
 if(speedState == 2){
  speedX = 4; 
+ speedY = 14; 
+ normalDiagonalReducerX = 3; 
+ normalDiagonalReducerY = 18;
 }
 if(speedState == 3){
  speedX = 8; 
+ speedY = 20; 
+ normalDiagonalReducerX = 3; 
+ normalDiagonalReducerY = 22;
 }
 if(speedState == 4){
  speedX = 12; 
+ speedY = 26; 
+ normalDiagonalReducerX = 3; 
+ normalDiagonalReducerY = 23; 
 }
+
+        if (diagonalReducer == 2){
+          flipDiagonalReducerX = 0; 
+          flipDiagonalReducerY = 0; 
+        }
+        else {
+          flipDiagonalReducerX = diagonalReducerX; 
+          flipDiagonalReducerY = diagonalReducerY;  
+        }
   establishContact();  // send a byte to establish contact with the pc until the pc program responds
  
 }
@@ -236,32 +269,32 @@ void serialEvent(){
         Serial.println(nudgeDuration); //the last data has to be "println"  
         break; 
        case 34:  // toggle the relay for output socket 1 for two tenths of a second - wheelchair on / off button 
-        digitalWrite(output1, LOW);
-        delay (200);
         digitalWrite(output1, HIGH);
-        break;
-       case 35: // toggle the relay for output socket 2 for two tenths of a second
-        digitalWrite(output2, LOW);
         delay (200);
-        digitalWrite(output2, HIGH);
+        digitalWrite(output1, LOW);
+        break;
+       case 35: // toggle the relay for output socket 2 (mode) for two tenths of a second
+        digitalWrite(output3, HIGH);
+        delay (200);
+        digitalWrite(output3, LOW);
         break;
        case 36:// toggle the relay for output socket 2 for two tenths of a second five times 
         for (int w = 0; w<5; w++){
-        digitalWrite(output2, LOW);
+        digitalWrite(output3, HIGH);
         delay (200);
-        digitalWrite(output2, HIGH);
+        digitalWrite(output3, LOW);
         delay (200);}
         break;
        case 48: // toggle the relay for output socket 3 for two tenths of a second 
-        digitalWrite(output3, LOW);
+        digitalWrite(output4, HIGH);
         delay (200);
-        digitalWrite(output3, HIGH);
+        digitalWrite(output4, LOW);
         break;
        case 37: //nw direction button press (the eight possible directions are expressed as compass marks. nw = north west)
         if (lastDirButtPress != 1 || continueState != 0){
         if (joystickStateNS != 1 || joystickStateEW != 2){
-        xpos = (xMIDpos + ((speedX / diagonalReducer)+ speedAdd));
-        ypos = (yMIDpos + ((speedY / diagonalReducer) + speedAdd));
+        xpos = (xMIDpos + ((speedX - normalDiagonalReducerX) + flipDiagonalReducerX));
+        ypos = (yMIDpos + ((speedY - normalDiagonalReducerY) + flipDiagonalReducerY));
         continueState = 0;
         joystickStateNS = 1;
         joystickStateEW = 2;
@@ -287,7 +320,7 @@ void serialEvent(){
           ypos = yMIDpos; 
         }
         if (joystickStateNS != 1){
-        xpos = (xMIDpos + (speedX + speedAdd));
+        xpos = (xMIDpos + speedX);
         joystickStateNS = 1;
         continueState = 0;
         driveSwitchStateNS = 1;
@@ -305,8 +338,8 @@ void serialEvent(){
        case 39: //ne direction button press 
         if (lastDirButtPress != 3 || continueState != 0){
         if (joystickStateNS != 1 || joystickStateEW != 1){
-        xpos = (xMIDpos + ((speedX / diagonalReducer) + speedAdd));
-        ypos = (yMIDpos - ((speedY / diagonalReducer) + speedAdd));
+        xpos = (xMIDpos + ((speedX - normalDiagonalReducerX) + flipDiagonalReducerX));
+        ypos = (yMIDpos - ((speedY - normalDiagonalReducerY) + flipDiagonalReducerY));
         continueState = 0;
         joystickStateNS = 1;
         joystickStateEW = 1;
@@ -333,7 +366,7 @@ void serialEvent(){
           xpos = xMIDpos; 
         }
         if (joystickStateEW != 1){
-        ypos = (yMIDpos - (speedY + speedAdd));
+        ypos = (yMIDpos - leftRightReducer);
         joystickStateEW = 1;
         continueState = 0;
         driveSwitchStateEW = 1;
@@ -353,8 +386,8 @@ void serialEvent(){
        case 41: //se direction button press 
         if (lastDirButtPress != 5 || continueState != 0){
         if (joystickStateNS != 2 || joystickStateEW != 1){
-        xpos = (xMIDpos - ((speedX / diagonalReducer) + speedAdd));
-        ypos = (yMIDpos - ((speedY / diagonalReducer) + speedAdd));
+        xpos = (xMIDpos - ((speedX - normalDiagonalReducerX) + flipDiagonalReducerX));
+        ypos = (yMIDpos - ((speedY - normalDiagonalReducerY) + flipDiagonalReducerY));
         continueState = 0;
         joystickStateNS = 2;
         joystickStateEW = 1;
@@ -381,7 +414,7 @@ void serialEvent(){
           ypos = yMIDpos; 
         }
         if (joystickStateNS != 2){
-        xpos = (xMIDpos - (speedX + speedAdd));
+        xpos = (xMIDpos - speedX);
         joystickStateNS = 2;
         continueState = 0;
         driveSwitchStateNS = 1;
@@ -399,8 +432,8 @@ void serialEvent(){
        case 43: //sw direction button press 
         if (lastDirButtPress != 7 || continueState != 0){
         if (joystickStateNS != 2 || joystickStateEW != 2){
-        xpos = (xMIDpos - ((speedX / diagonalReducer) + speedAdd));
-        ypos = (yMIDpos + ((speedY / diagonalReducer) + speedAdd));
+        xpos = (xMIDpos - ((speedX - normalDiagonalReducerX) + flipDiagonalReducerX));
+        ypos = (yMIDpos + ((speedY - normalDiagonalReducerY) + flipDiagonalReducerY));
         continueState = 0;
         joystickStateNS = 2;
         joystickStateEW = 2;
@@ -427,7 +460,7 @@ void serialEvent(){
           xpos = xMIDpos; 
         }
         if (joystickStateEW != 2){
-        ypos = (yMIDpos + (speedY + speedAdd));
+        ypos = (yMIDpos + leftRightReducer);
         joystickStateEW = 2;
         continueState = 0;
         driveSwitchStateEW = 1;
@@ -525,23 +558,75 @@ void serialEvent(){
         break;
        case 55: //   speed = 1
         speedState = 1; 
-        speedX = 0; 
-        speedY = 0; 
+        speedX = 9; 
+        speedY = 17; 
+        normalDiagonalReducerX = 3; 
+        normalDiagonalReducerY = 13;
+        diagonalReducerX = 0; 
+        diagonalReducerY = 10; 
+        
+        if (diagonalReducer == 2){
+          flipDiagonalReducerX = 0; 
+          flipDiagonalReducerY = 0; 
+        }
+        else {     
+          flipDiagonalReducerX = diagonalReducerX; 
+          flipDiagonalReducerY = diagonalReducerY;  
+        }        
         break;
        case 56: //  speed = 2
         speedState = 2; 
-        speedX = 4; 
-        speedY = 4; 
+        speedX = 13; 
+        speedY = 23; 
+        normalDiagonalReducerX = 3; 
+        normalDiagonalReducerY = 18;
+        diagonalReducerX = 0; 
+        diagonalReducerY = 10; 
+        
+        if (diagonalReducer == 2){
+          flipDiagonalReducerX = 0; 
+          flipDiagonalReducerY = 0; 
+        }
+        else {     
+          flipDiagonalReducerX = diagonalReducerX; 
+          flipDiagonalReducerY = diagonalReducerY;  
+        }        
         break;
        case 57: //  speed = 3
         speedState = 3; 
-        speedX = 8; 
-        speedY = 8; 
+        speedX = 17; 
+        speedY = 29; 
+        normalDiagonalReducerX = 3; 
+        normalDiagonalReducerY = 22;
+        diagonalReducerX = 0; 
+        diagonalReducerY = 10; 
+        
+        if (diagonalReducer == 2){
+          flipDiagonalReducerX = 0; 
+          flipDiagonalReducerY = 0; 
+        }
+        else {     
+          flipDiagonalReducerX = diagonalReducerX; 
+          flipDiagonalReducerY = diagonalReducerY;  
+        }        
         break;      
        case 58: //  speed = 4
         speedState = 4; 
-        speedX = 12; 
-        speedY = 12; 
+        speedX = 21; 
+        speedY = 35; 
+        normalDiagonalReducerX = 3; 
+        normalDiagonalReducerY = 23;
+        diagonalReducerX = 0; 
+        diagonalReducerY = 10; 
+        
+        if (diagonalReducer == 2){
+          flipDiagonalReducerX = 0; 
+          flipDiagonalReducerY = 0; 
+        }
+        else {     
+          flipDiagonalReducerX = diagonalReducerX; 
+          flipDiagonalReducerY = diagonalReducerY;  
+        }        
         break;
        case 60: // duration ns = half 
         durationTimeNS = 500; 
@@ -630,11 +715,15 @@ void serialEvent(){
         }
         break;
         case 78: // Diagonal reducer toggle
-        if (diagonalReducer == 2){
-          diagonalReducer = 1; 
+        if (diagonalReducer == 1){
+          diagonalReducer = 2; 
+          flipDiagonalReducerX = 0; 
+          flipDiagonalReducerY = 0; 
         }
         else {
-          diagonalReducer = 2;         
+          diagonalReducer = 1;       
+          flipDiagonalReducerX = diagonalReducerX; 
+          flipDiagonalReducerY = diagonalReducerY;  
         }
         break; 
       }
